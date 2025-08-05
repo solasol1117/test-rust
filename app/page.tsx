@@ -8,9 +8,46 @@ import { useAuth } from "@/hooks/useAuth";
 import { Token } from "@/types/token";
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const handleAddToPortfolio = async (token: Token) => {
+    try {
+      // Show a simple prompt for quantity
+      const quantityStr = window.prompt(`How many ${token.symbol} tokens would you like to add?`, "1");
+      
+      if (!quantityStr || isNaN(Number(quantityStr)) || Number(quantityStr) <= 0) {
+        alert("Please enter a valid quantity");
+        return;
+      }
+      
+      const quantity = Number(quantityStr);
+      
+      const response = await fetch("/api/portfolio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tokenId: token.id,
+          quantity: quantity,
+          token: token
+        }),
+      });
+
+      if (response.ok) {
+        alert(`Successfully added ${quantity} ${token.symbol} to your portfolio!`);
+        // Force portfolio refresh by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('portfolio-updated'));
+      } else {
+        throw new Error("Failed to add to portfolio");
+      }
+    } catch (error) {
+      console.error("Error adding to portfolio:", error);
+      alert("Failed to add to portfolio. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-primary">
@@ -22,7 +59,12 @@ export default function Home() {
               {isAuthenticated ? (
                 <div className="flex items-center space-x-2">
                   <span className="text-white">Welcome, {user?.username}</span>
-                  <button className="btn-secondary">Logout</button>
+                  <button 
+                    className="btn-secondary"
+                    onClick={logout}
+                  >
+                    Logout
+                  </button>
                 </div>
               ) : (
                 <button
@@ -42,15 +84,17 @@ export default function Home() {
           <div className="lg:col-span-2">
             <TokenList
               onTokenSelect={setSelectedToken}
-              onAddToPortfolio={() => {
+              onAddToPortfolio={(token) => {
                 if (!isAuthenticated) {
                   setShowAuthModal(true);
+                } else {
+                  handleAddToPortfolio(token);
                 }
               }}
             />
           </div>
           <div className="lg:col-span-1">
-            <Portfolio />
+            <Portfolio onShowAuthModal={() => setShowAuthModal(true)} />
           </div>
         </div>
       </main>

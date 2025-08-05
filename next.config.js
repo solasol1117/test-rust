@@ -13,11 +13,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-src 'self' https://s.tradingview.com https://www.tradingview.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://s3.tradingview.com https://s.tradingview.com; connect-src 'self' https://api.coingecko.com https://s.tradingview.com https://www.tradingview.com;",
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
+            value: "frame-src 'self' https://*.tradingview.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tradingview.com; connect-src 'self' https://api.coingecko.com https://*.tradingview.com wss://*.tradingview.com;",
           },
         ],
       },

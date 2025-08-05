@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const users: any[] = [];
+import { userStore } from "@/lib/userStore";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +12,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = users.find(
-      (u) => u.username === username && u.password === password
-    );
+    console.log(`Login attempt for username: ${username}`);
+    console.log(`Total users in store: ${userStore.getUserCount()}`);
+
+    const user = userStore.validateCredentials(username, password);
 
     if (!user) {
+      console.log(`Invalid credentials for username: ${username}`);
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = user;
 
+    console.log(`Login successful for username: ${username}`);
     return NextResponse.json({
       user: userWithoutPassword,
       token,

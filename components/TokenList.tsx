@@ -7,7 +7,7 @@ import TokenChart from "./TokenChart";
 
 interface TokenListProps {
   onTokenSelect: (token: Token) => void;
-  onAddToPortfolio: () => void;
+  onAddToPortfolio: (token: Token) => void;
 }
 
 export default function TokenList({
@@ -113,7 +113,7 @@ export default function TokenList({
               key={token.id}
               token={token}
               onClick={() => handleTokenClick(token)}
-              onAddToPortfolio={onAddToPortfolio}
+              onAddToPortfolio={() => onAddToPortfolio(token)}
             />
           ))}
         </div>

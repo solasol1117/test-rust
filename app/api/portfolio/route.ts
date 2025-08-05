@@ -1,43 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const mockPortfolio = {
-  holdings: [
-    {
-      tokenId: "1",
-      token: {
-        id: "1",
-        name: "Solana",
-        symbol: "SOL",
-        price: 98.45,
-        priceChange24h: 5.2,
-        volume24h: 1234567,
-        liquidity: 9876543,
-        pairAddress: "0x123...",
-        dexId: "raydium",
-        chainId: "solana",
-      },
-      quantity: 10.5,
-      value: 1033.73,
-    },
-    {
-      tokenId: "2",
-      token: {
-        id: "2",
-        name: "Bonk",
-        symbol: "BONK",
-        price: 0.00001234,
-        priceChange24h: -2.1,
-        volume24h: 567890,
-        liquidity: 1234567,
-        pairAddress: "0x456...",
-        dexId: "raydium",
-        chainId: "solana",
-      },
-      quantity: 1000000,
-      value: 12.34,
-    },
-  ],
-  totalValue: 1046.07,
+interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  price: number;
+  priceChange24h: number;
+  volume24h: number;
+  liquidity: number;
+  pairAddress: string;
+  dexId: string;
+  chainId: string;
+}
+
+interface PortfolioHolding {
+  tokenId: string;
+  token: Token;
+  quantity: number;
+  value: number;
+}
+
+const mockPortfolio: {
+  holdings: PortfolioHolding[];
+  totalValue: number;
+} = {
+  holdings: [],
+  totalValue: 0,
 };
 
 export async function GET(request: NextRequest) {
@@ -54,16 +42,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { tokenId, quantity } = await request.json();
+    const { tokenId, quantity, token } = await request.json();
 
-    if (!tokenId || !quantity) {
+    if (!tokenId || !quantity || !token) {
       return NextResponse.json(
-        { error: "Token ID and quantity are required" },
+        { error: "Token ID, quantity, and token data are required" },
         { status: 400 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Calculate the value
+    const value = token.price * quantity;
+    
+    // Find existing holding or create new one
+    const existingHolding = mockPortfolio.holdings.find(h => h.tokenId === tokenId);
+    
+    if (existingHolding) {
+      // Update existing holding
+      console.log(`📊 Updating existing holding for ${token.symbol}: ${existingHolding.quantity} + ${quantity}`);
+      existingHolding.quantity += quantity;
+      existingHolding.value = existingHolding.quantity * token.price;
+      existingHolding.token = token; // Update token data with latest prices
+    } else {
+      // Add new holding
+      console.log(`📊 Adding new holding for ${token.symbol}: ${quantity}`);
+      const newHolding = {
+        tokenId,
+        token,
+        quantity,
+        value
+      };
+      mockPortfolio.holdings.push(newHolding);
+    }
+    
+    // Recalculate total value
+    mockPortfolio.totalValue = mockPortfolio.holdings.reduce((total, holding) => total + holding.value, 0);
+
+    return NextResponse.json({ success: true, message: `Added ${quantity} ${token.symbol} to portfolio` });
   } catch (error) {
     console.error("Error adding to portfolio:", error);
     return NextResponse.json(

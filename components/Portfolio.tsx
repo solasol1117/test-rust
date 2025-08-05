@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { PortfolioHolding } from "@/types/token";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Portfolio() {
+interface PortfolioProps {
+  onShowAuthModal?: () => void;
+}
+
+export default function Portfolio({ onShowAuthModal }: PortfolioProps) {
   const { isAuthenticated } = useAuth();
   const [holdings, setHoldings] = useState<PortfolioHolding[]>([]);
   const [totalValue, setTotalValue] = useState(0);
@@ -15,6 +19,18 @@ export default function Portfolio() {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    // Listen for portfolio updates
+    const handlePortfolioUpdate = () => {
+      if (isAuthenticated) {
+        fetchPortfolio();
+      }
+    };
+
+    window.addEventListener('portfolio-updated', handlePortfolioUpdate);
+    return () => window.removeEventListener('portfolio-updated', handlePortfolioUpdate);
+  }, [isAuthenticated]);
+
   const fetchPortfolio = async () => {
     try {
       const response = await fetch("/api/portfolio");
@@ -23,8 +39,8 @@ export default function Portfolio() {
       setTotalValue(data.totalValue);
     } catch (error) {
       console.error("Failed to fetch portfolio:", error);
-      setHoldings(mockHoldings);
-      setTotalValue(1234.56);
+      setHoldings([]);
+      setTotalValue(0);
     }
   };
 
@@ -41,7 +57,12 @@ export default function Portfolio() {
         <h2 className="text-xl font-bold mb-4">Portfolio</h2>
         <div className="text-center py-8">
           <p className="text-gray-400 mb-4">Login to view your portfolio</p>
-          <button className="btn-primary">Login</button>
+          <button 
+            className="btn-primary"
+            onClick={onShowAuthModal}
+          >
+            Login
+          </button>
         </div>
       </div>
     );
@@ -91,39 +112,4 @@ export default function Portfolio() {
   );
 }
 
-const mockHoldings: PortfolioHolding[] = [
-  {
-    tokenId: "1",
-    token: {
-      id: "1",
-      name: "Solana",
-      symbol: "SOL",
-      price: 98.45,
-      priceChange24h: 5.2,
-      volume24h: 1234567,
-      liquidity: 9876543,
-      pairAddress: "0x123...",
-      dexId: "raydium",
-      chainId: "solana",
-    },
-    quantity: 10.5,
-    value: 1033.73,
-  },
-  {
-    tokenId: "2",
-    token: {
-      id: "2",
-      name: "Bonk",
-      symbol: "BONK",
-      price: 0.00001234,
-      priceChange24h: -2.1,
-      volume24h: 567890,
-      liquidity: 1234567,
-      pairAddress: "0x456...",
-      dexId: "raydium",
-      chainId: "solana",
-    },
-    quantity: 1000000,
-    value: 12.34,
-  },
-];
+

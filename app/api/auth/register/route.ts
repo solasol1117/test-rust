@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const users: any[] = [];
+import { userStore } from "@/lib/userStore";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (users.find((u) => u.username === username)) {
+    if (userStore.userExists(username)) {
       return NextResponse.json(
         { error: "Username already exists" },
         { status: 409 }
@@ -30,7 +29,10 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     };
 
-    users.push(user);
+    userStore.addUser(user);
+
+    console.log(`User registered: ${username}`);
+    console.log(`Total users in store: ${userStore.getUserCount()}`);
 
     const token = `token_${user.id}_${Date.now()}`;
 
